@@ -19,12 +19,6 @@ enum BookingStatus {
   CANCELLED
 }
 
-enum UserRole {
-  STUDENT
-  TUTOR
-  ADMIN
-}
-
 enum UserStatus {
   ACTIVE
   BANNED
