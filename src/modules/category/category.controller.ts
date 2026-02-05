@@ -45,6 +45,17 @@ const createCategory = async (req: Request, res: Response) => {
 // get all category by admin
 const getAllCategoryByAdmin = async (req: Request, res: Response) => {
   try {
+    if (!req.user) {
+      return res.status(403).json({
+        success: false,
+        message: "Unauthorized ",
+      });
+    } else if (req.user.role !== UserRole.ADMIN) {
+      return res.status(403).json({
+        success: false,
+        message: "Unauthorized Access",
+      });
+    }
     const result = await categoryServices.getAllCategoryByAdmin();
     return res.status(200).json({
       success: true,

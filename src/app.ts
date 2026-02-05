@@ -3,6 +3,8 @@ import { categoryRouter } from "./modules/category/category.routes";
 import { toNodeHandler } from "better-auth/node";
 import { auth } from "./lib/auth";
 import cors from "cors";
+import errorHandler from "./middlewares/globalErrorHandler";
+import { adminRouter } from "./modules/admin/admin.routes";
 
 const app: Application = express();
 
@@ -11,14 +13,18 @@ app.use(cors({
     credentials: true,
 }))
 
-app.all("/api/auth/*splat", toNodeHandler(auth));
-
 app.use(express.json());
 
+app.all("/api/auth/*splat", toNodeHandler(auth));
+
 app.use("/api/categories", categoryRouter);
+
+app.use("/api/admin", adminRouter);
 
 app.get("/", (req, res) => {
     res.send("Hello Next Level Web Developer")
 })
+
+app.use(errorHandler);
 
 export default app;

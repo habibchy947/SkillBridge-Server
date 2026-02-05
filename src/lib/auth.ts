@@ -143,6 +143,7 @@ export const auth = betterAuth({
       },
     },
   },
+  
   hooks: {
     async before(ctx: MiddlewareInputContext<any>): Promise<void> {
       if (!ctx.request) return;
