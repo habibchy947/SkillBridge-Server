@@ -5,6 +5,7 @@ import { auth } from "./lib/auth";
 import cors from "cors";
 import errorHandler from "./middlewares/globalErrorHandler";
 import { adminRouter } from "./modules/admin/admin.routes";
+import { userRouter } from "./modules/user/user.routes";
 
 const app: Application = express();
 
@@ -20,6 +21,8 @@ app.all("/api/auth/*splat", toNodeHandler(auth));
 app.use("/api/categories", categoryRouter);
 
 app.use("/api/admin", adminRouter);
+
+app.use("/api/user", userRouter)
 
 app.get("/", (req, res) => {
     res.send("Hello Next Level Web Developer")
