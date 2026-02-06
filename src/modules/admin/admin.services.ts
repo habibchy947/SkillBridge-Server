@@ -43,7 +43,10 @@ const getAllUsers = async ({
         skip,
         where: {
             AND: andConditions
-        }
+        },
+        orderBy: {
+            [sortBy]: sortOrder
+        },
     });
 
     const total = await prisma.user.count({
@@ -52,8 +55,22 @@ const getAllUsers = async ({
         }
     });
 
+    const tutorCount = await prisma.user.count({
+        where: {
+            role: "TUTOR"
+        }
+    })
+
+    const studentCount = await prisma.user.count({
+        where: {
+            role: "STUDENT"
+        }
+    })
+
     return {
         data: result,
+        tutor: tutorCount,
+        student: studentCount,
         pagination: {
             total,
             page,

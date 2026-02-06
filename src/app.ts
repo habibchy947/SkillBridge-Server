@@ -6,6 +6,7 @@ import cors from "cors";
 import errorHandler from "./middlewares/globalErrorHandler";
 import { adminRouter } from "./modules/admin/admin.routes";
 import { userRouter } from "./modules/user/user.routes";
+import { tutorRouter } from "./modules/tutor/tutor.routes";
 
 const app: Application = express();
 
@@ -22,7 +23,9 @@ app.use("/api/categories", categoryRouter);
 
 app.use("/api/admin", adminRouter);
 
-app.use("/api/user", userRouter)
+app.use("/api/user", userRouter);
+
+app.use("/api/tutors", tutorRouter);
 
 app.get("/", (req, res) => {
     res.send("Hello Next Level Web Developer")

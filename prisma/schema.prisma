@@ -35,9 +35,11 @@ model Tutor {
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
+  user User @relation(fields: [userId], references: [id])
   bookings Booking[] @relation("TutorBookings")
   reviews  Review[]
 
+  @@unique([userId])
   @@index([userId])
   @@map("tutors")
 }
@@ -100,6 +102,7 @@ model User {
   sessions      Session[]
   accounts      Account[]
 
+  tutor Tutor?
   role   String     @default("STUDENT")
   status UserStatus @default(ACTIVE)
 

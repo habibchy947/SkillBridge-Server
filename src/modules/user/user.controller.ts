@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { userServices } from "./user.services";
 
+// update own profile
 const updateOwnProfile = async (req: Request, res: Response) => {
   try {
     const allowedFields = ["name", "image", "email"];
@@ -29,6 +30,7 @@ const updateOwnProfile = async (req: Request, res: Response) => {
         });
         }
 
+        // empty body check
         if (!req.body ||typeof req.body !== "object" || Object.keys(req.body).length === 0) {
             return res.status(400).json({
                 success: false,
@@ -36,6 +38,7 @@ const updateOwnProfile = async (req: Request, res: Response) => {
             });
         }
 
+        // status field check
         if(req.body.hasOwnProperty("status")) {
           return res.status(403).json({
           success: false,
@@ -48,6 +51,7 @@ const updateOwnProfile = async (req: Request, res: Response) => {
             (key) => !allowedFields.includes(key)
         );
 
+        // error if invalid fields are present
         if (invalidFields.length) {
           return res.status(400).json({
             success: false,
