@@ -15,3 +15,9 @@ export interface AvailabilitySlotInput {
   startTime: string;
   endTime: string;
 }
+
+export interface UpdateAvailabilitySlotInput {
+  day?: string;
+  startTime?: string;
+  endTime?: string;
+}
