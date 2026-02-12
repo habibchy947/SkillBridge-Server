@@ -30,8 +30,9 @@ model Tutor {
   bio              String   @db.VarChar(150)
   hourlyRate       Int
   rating           Float    @default(0)
-  subject          String[]
-  availabiltySlots String[]
+  
+  categories       Category[]
+  availabiltySlots Availability[]
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
@@ -44,10 +45,25 @@ model Tutor {
   @@map("tutors")
 }
 
+model Availability {
+  id        String @id @default(uuid())
+  tutorId   String
+  day       String
+  startTime String
+  endTime   String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tutor Tutor @relation(fields: [tutorId], references: [id])
+
+  @@unique([tutorId, day, startTime, endTime])
+  @@index([tutorId])
+}
+
 model Category {
   id          String   @id @default(uuid())
   name        String
-  description String[]
+  tutors Tutor[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -69,6 +85,7 @@ model Booking {
 
   @@index([studentId])
   @@index([tutorId])
+  @@unique([tutorId, sessionTime])
 }
 
 model Review {

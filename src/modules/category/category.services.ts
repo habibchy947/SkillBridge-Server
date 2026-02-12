@@ -25,7 +25,6 @@ const getAllCategory = async () => {
         select: {
             id: true,
             name: true,
-            description: true
         }
     });
     return {
