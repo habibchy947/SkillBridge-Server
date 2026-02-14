@@ -297,6 +297,66 @@ const addAvailability = async (payload: AvailabilitySlotInput, id: string) => {
         throw new Error(error instanceof Error ? error.message : "Failed to add availability");
     }
 };
+
+// get tutor availability slots
+const getTutorAvailabilitySlots = async (tutorId: string, date?: string) => {
+    try {
+        const selectedDate = new Date(date as string);
+        const day = selectedDate.toLocaleDateString("en-US", { weekday: "long" }).toLowerCase();
+
+        const availability = await prisma.availability.findFirst({
+            where: {
+                tutorId,
+                day,
+            },
+        });
+        if (!availability) {
+            throw new Error("No availability found for the selected date");
+        }
+        let current = new Date(`${date}T${availability.startTime}:00Z`);
+        const end = new Date(`${date}T${availability.endTime}:00Z`);
+
+        if (current >= end) {
+            throw new Error("Invalid availability time range");
+        }
+
+        const slots = [];
+
+        while (current < end) {
+            slots.push({
+                availabilityId: availability.id,
+                sessionTime: new Date(current).toISOString(),
+            });
+
+            current.setUTCHours(current.getUTCHours() + 1);
+        }
+        const booked = await prisma.booking.findMany({
+            where: {
+                availabilityId: availability.id,
+                sessionTime: {
+                    gte: new Date(`${date}T00:00:00.000Z`),
+                    lte: new Date(`${date}T23:59:59.999Z`),
+                },
+            },
+        });
+        const bookedTimes = booked.map((b) =>
+            b.sessionTime.toISOString()
+        );
+
+        const availableSlots = slots.filter(
+            (slot) => !bookedTimes.includes(slot.sessionTime)
+        );
+        console.log("Date:", date);
+        console.log("StartTime:", availability.startTime);
+        console.log("EndTime:", availability.endTime);
+        console.log("Current:", current);
+        console.log("End:", end);
+        console.log("Available Slots:", availableSlots, "Booked Times:", bookedTimes);
+        return availableSlots;
+    } catch (error) {
+        throw new Error(error instanceof Error ? error.message : "Failed to get tutor availability slots");
+    }
+}
 // update tutor availability
 const updateAvailability = async (payload: UpdateAvailabilitySlotInput, id: string, availabilityId: string) => {
     try {
@@ -344,5 +404,6 @@ export const tutorServices = {
     addAvailability,
     updateAvailability,
     getAllTutors,
-    getSingleTutor
+    getSingleTutor,
+    getTutorAvailabilitySlots
 };

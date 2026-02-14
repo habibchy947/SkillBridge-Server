@@ -55,7 +55,7 @@ model Availability {
   updatedAt   DateTime @updatedAt
 
   tutor Tutor @relation(fields: [tutorId], references: [id])
-
+  bookings Booking[]
   @@unique([tutorId, day, startTime, endTime])
   @@index([tutorId])
 }
@@ -74,10 +74,13 @@ model Booking {
   id          String        @id @default(uuid())
   studentId   String
   tutorId     String
+  student     User          @relation("StudentBookings", fields: [studentId], references: [id])
   tutor       Tutor         @relation("TutorBookings", fields: [tutorId], references: [id])
   sessionTime DateTime
+  availabilityId String 
+  availability  Availability @relation(fields: [availabilityId], references: [id])
   status      BookingStatus @default(CONFIRMED)
-  price       Int
+  price       Float
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
 
@@ -85,7 +88,7 @@ model Booking {
 
   @@index([studentId])
   @@index([tutorId])
-  @@unique([tutorId, sessionTime])
+  @@unique([tutorId, availabilityId, sessionTime])
 }
 
 model Review {
@@ -120,6 +123,7 @@ model User {
   accounts      Account[]
 
   tutor Tutor?
+  bookingAsStudent Booking[] @relation("StudentBookings")
   role   String     @default("STUDENT")
   status UserStatus @default(ACTIVE)
 

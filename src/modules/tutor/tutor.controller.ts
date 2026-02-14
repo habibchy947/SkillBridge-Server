@@ -194,6 +194,71 @@ const addAvailability = async (req: Request, res: Response) => {
     });
   }
 };
+
+// get tutor availabilitySlots
+const getTutorAvailabilitySlots = async (req: Request, res: Response) => {
+  try {
+    const { tutorId } = req.params;
+    const { date } = req.query;
+
+    if (!tutorId) {
+      return res.status(400).json({ message: "Tutor Id is required" });
+    }
+    if (!date) {
+      return res.status(400).json({ message: "Date is required" });
+    }
+    // validate date format
+    const regex = /^\d{4}-\d{2}-\d{2}$/;
+
+    if (!regex.test(date as string)) {
+      return res.status(400).json({
+        message: "Invalid date format. Use YYYY-MM-DD",
+      });
+    }
+
+    const dateString = date as string;
+    const selectedDate = new Date(dateString);
+
+    if (isNaN(selectedDate.getTime())) {
+      return res.status(400).json({
+        message: "Invalid date",
+      });
+    }
+
+    const [year, month, day] = dateString.split("-").map(Number);
+
+    if (
+      selectedDate.getUTCFullYear() !== year ||
+      selectedDate.getUTCMonth() + 1 !== month ||
+      selectedDate.getUTCDate() !== day
+    ) {
+      return res.status(400).json({
+        message: "Invalid calendar date",
+      });
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    if (selectedDate < today) {
+      return res.status(400).json({
+        message: "Cannot book past dates",
+      });
+    }
+    
+    const result = await tutorServices.getTutorAvailabilitySlots(tutorId as string, date as string);
+    return res.status(200).json({
+      success: true,
+      message: result
+    })
+  } catch (error: any) {
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+}
+
 // update tutor availability
 const updateAvailability = async (req: Request, res: Response) => {
   try {
@@ -272,5 +337,6 @@ export const tutorController = {
   addAvailability,
   updateAvailability,
   getAllTutors,
-  getSingleTutor
+  getSingleTutor,
+  getTutorAvailabilitySlots
 };

@@ -12,6 +12,8 @@ router.get("/:id", tutorController.getSingleTutor)
 router.post("/", auth(UserRole.TUTOR), tutorController.createTutorProfile);
 // update tutor profile
 router.patch("/profile", auth(UserRole.TUTOR), tutorController.updateTutorProfile);
+// get tutor availability
+router.get("/availability/:tutorId/slots", auth(UserRole.STUDENT), tutorController.getTutorAvailabilitySlots);
 // create tutor availability
 router.post("/availability", auth(UserRole.TUTOR), tutorController.addAvailability);
 // update tutor availability
