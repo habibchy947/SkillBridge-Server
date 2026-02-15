@@ -141,6 +141,7 @@ const getAllBookings = async ({
 const getMyBookings = async (
     {
         id,
+        role,
         status,
         page,
         limit,
@@ -149,6 +150,7 @@ const getMyBookings = async (
         sortBy
     }: {
         id: string;
+        role: UserRole;
         status?: BookingStatus | undefined;
         page: number;
         limit: number;
@@ -162,15 +164,16 @@ const getMyBookings = async (
                 userId: id
             }
         })
-        if (!bookingDataAsTutor) throw new Error("No booking found for this tutor")
+        if (!bookingDataAsTutor && role === UserRole.TUTOR) throw new Error("No booking found for this tutor")
         const bookingData = await prisma.booking.findFirst({
             where: {
                 OR: [
                     { studentId: id },
-                    { tutorId: bookingDataAsTutor.id },
+                    ...(bookingDataAsTutor ? [{ tutorId: bookingDataAsTutor.id }] : []),
                 ]
             }
         })
+        if(bookingData?.studentId !== id && role === UserRole.STUDENT) throw new Error("No booking found for this student")
         if (!bookingData) throw new Error("booking not found")
 
         const andConditions: BookingWhereInput[] = []
@@ -182,7 +185,7 @@ const getMyBookings = async (
         const whereCondition: BookingWhereInput = {
             OR: [
                 { studentId: id },
-                { tutorId: bookingDataAsTutor.id },
+                ...(bookingDataAsTutor ? [{ tutorId: bookingDataAsTutor.id }] : []),
             ],
             AND: andConditions
         };

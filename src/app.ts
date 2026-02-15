@@ -8,6 +8,7 @@ import { adminRouter } from "./modules/admin/admin.routes";
 import { userRouter } from "./modules/user/user.routes";
 import { tutorRouter } from "./modules/tutor/tutor.routes";
 import { bookingsRouter } from "./modules/bookings/bookings.routes";
+import { reviewsRouter } from "./modules/reviews/review.routes";
 
 const app: Application = express();
 
@@ -29,6 +30,8 @@ app.use("/api/user", userRouter);
 app.use("/api/tutors", tutorRouter);
 
 app.use("/api/bookings", bookingsRouter);
+
+app.use("/api/reviews", reviewsRouter);
 
 app.get("/", (req, res) => {
     res.send("Hello Next Level Web Developer")

@@ -124,7 +124,7 @@ const getMyBookings = async (req: Request, res: Response) => {
 
         const { page, limit, skip, sortOrder, sortBy } = paginationSortingHelper(req.query)
         const userId = req.user.id
-        const result = await bookingService.getMyBookings({ id: userId, status, page, limit, skip, sortOrder, sortBy });
+        const result = await bookingService.getMyBookings({ id: userId, role: req.user.role, status, page, limit, skip, sortOrder, sortBy });
         return res.status(200).json({
             success: true,
             message: "Booking Fetched successfully",
