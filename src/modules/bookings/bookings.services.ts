@@ -1,3 +1,4 @@
+import { Prisma } from "../../../generated/prisma/client";
 import { BookingStatus } from "../../../generated/prisma/enums";
 import { BookingWhereInput } from "../../../generated/prisma/models";
 import { prisma } from "../../lib/prisma";
@@ -139,30 +140,39 @@ const getAllBookings = async ({
 // get my Booking
 const getMyBookings = async (
     {
-    id,
-    status,
-    page,
-    limit,
-    skip,
-    sortOrder,
-    sortBy
-}: {
-    id: string;
-    status?: BookingStatus | undefined;
-    page: number;
-    limit: number;
-    skip: number;
-    sortOrder: string;
-    sortBy: string;
-}) => {
+        id,
+        status,
+        page,
+        limit,
+        skip,
+        sortOrder,
+        sortBy
+    }: {
+        id: string;
+        status?: BookingStatus | undefined;
+        page: number;
+        limit: number;
+        skip: number;
+        sortOrder: string;
+        sortBy: string;
+    }) => {
     try {
-        const bookingData = await prisma.booking.findFirst({
+        const bookingDataAsTutor = await prisma.tutor.findFirst({
             where: {
-                studentId: id
+                userId: id
             }
         })
-        if(!bookingData) throw new Error("booking not found")
-            
+        if (!bookingDataAsTutor) throw new Error("No booking found for this tutor")
+        const bookingData = await prisma.booking.findFirst({
+            where: {
+                OR: [
+                    { studentId: id },
+                    { tutorId: bookingDataAsTutor.id },
+                ]
+            }
+        })
+        if (!bookingData) throw new Error("booking not found")
+
         const andConditions: BookingWhereInput[] = []
 
         if (status) {
@@ -170,7 +180,10 @@ const getMyBookings = async (
         };
 
         const whereCondition: BookingWhereInput = {
-            studentId: id,
+            OR: [
+                { studentId: id },
+                { tutorId: bookingDataAsTutor.id },
+            ],
             AND: andConditions
         };
 
@@ -178,8 +191,8 @@ const getMyBookings = async (
             skip,
             take: limit,
             orderBy: [
-                {[sortBy]: sortOrder},
-                {sessionTime: "asc"}
+                { [sortBy]: sortOrder },
+                { sessionTime: "asc" }
             ],
             where: whereCondition,
             include: {
@@ -220,21 +233,21 @@ const getMyBookings = async (
 // getSingleBooking
 const getSingleBooking = async (bookingId: string, userId: string, role: UserRole) => {
     try {
-        if(role === UserRole.STUDENT) {
+        if (role === UserRole.STUDENT) {
             const bookingDataStudent = await prisma.booking.findFirst({
-                where: { 
+                where: {
                     id: bookingId,
                     studentId: userId
                 }
             })
-            if(!bookingDataStudent) throw new Error("booking not found for this student")
+            if (!bookingDataStudent) throw new Error("booking not found for this student")
         }
         const bookingData = await prisma.booking.findUnique({
             where: {
                 id: bookingId
             }
         })
-        if(!bookingData) throw new Error("booking not found")
+        if (!bookingData) throw new Error("booking not found")
 
         const booking = await prisma.booking.findUnique({
             where: {
@@ -263,9 +276,89 @@ const getSingleBooking = async (bookingId: string, userId: string, role: UserRol
     }
 };
 
+const updateBookingStatus = async (bookingId: string, status: BookingStatus, userId: string, role: UserRole) => {
+    try {
+        const bookingStatus = await prisma.booking.findUnique({
+            where: {
+                id: bookingId
+            }
+        });
+        if (!bookingStatus) throw new Error("Booking not found")
+
+        const bookingDataAsTutor = await prisma.tutor.findFirst({
+            where: {
+                userId: userId
+            }
+        })
+        if (!bookingDataAsTutor && role === UserRole.TUTOR) throw new Error("You are not authorized to update this booking")
+        const isStudent = role === UserRole.STUDENT && bookingStatus.studentId === userId;
+        const isTutor = role === UserRole.TUTOR && bookingDataAsTutor && bookingStatus.tutorId === bookingDataAsTutor.id;
+
+        if (bookingStatus.studentId !== userId && role === UserRole.STUDENT) throw new Error("You are not authorized to update this booking")
+
+        if (!isStudent && !isTutor) {
+            throw new Error("You are not authorized to update this booking")
+        }
+
+        if (bookingStatus.status === BookingStatus.CANCELLED) {
+            throw new Error("Booking is already cancelled")
+        }
+
+        if (bookingStatus.status === BookingStatus.COMPLETED) {
+            throw new Error("Booking is already completed")
+        }
+
+        if (status === BookingStatus.CANCELLED) {
+            if (bookingStatus.status !== BookingStatus.CONFIRMED) {
+                throw new Error("Only confirmed booking can be cancelled")
+            }
+        }
+
+        if (status === BookingStatus.COMPLETED) {
+            if (bookingStatus.status !== BookingStatus.CONFIRMED) {
+                throw new Error("Only confirmed booking can be marked as completed")
+            }
+        }
+
+        if (!isStudent && status === BookingStatus.CANCELLED) {
+            throw new Error("Only students can cancel the booking")
+        }
+
+        if (!isTutor && status === BookingStatus.COMPLETED) {
+            throw new Error("Only tutors can mark the booking as completed")
+        }
+
+        if (new Date(bookingStatus.sessionTime) < new Date()) {
+            throw new Error("Cannot update past bookings")
+        }
+
+        if (new Date(bookingStatus.sessionTime) > new Date() && status === BookingStatus.COMPLETED) {
+            throw new Error("Cannot mark future bookings as completed")
+        }
+
+        if (bookingStatus.status === status) {
+            throw new Error(`Booking is already ${status.toLowerCase()}`)
+        }
+
+        const result = await prisma.booking.update({
+            where: {
+                id: bookingId
+            },
+            data: { status },
+        });
+
+        return result;
+
+    } catch (error) {
+        throw new Error(error instanceof Error ? error.message : "Failed to update booking status!");
+    }
+
+};
+
 export const bookingService = {
     createBooking,
     getAllBookings,
     getSingleBooking,
-    getMyBookings
+    getMyBookings,
+    updateBookingStatus
 };

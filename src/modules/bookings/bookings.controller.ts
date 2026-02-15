@@ -58,7 +58,7 @@ const getAllBookings = async (req: Request, res: Response) => {
         // const searchString = typeof search === 'string' ? search : undefined
         const { page, limit, skip, sortOrder, sortBy } = paginationSortingHelper(req.query)
 
-        const result = await bookingService.getAllBookings({status, page, limit, skip, sortOrder, sortBy});
+        const result = await bookingService.getAllBookings({ status, page, limit, skip, sortOrder, sortBy });
         return res.status(200).json({
             success: true,
             message: "Booking Fetched successfully",
@@ -89,7 +89,7 @@ const getSingleBooking = async (req: Request, res: Response) => {
         }
 
         const bookingId = req.params.id;
-        if(!bookingId) return res.status(400).json({ success: false, message: "Booking Id is required!" })
+        if (!bookingId) return res.status(400).json({ success: false, message: "Booking Id is required!" })
 
         const result = await bookingService.getSingleBooking(bookingId as string, req.user.id, req.user.role);
         return res.status(200).json({
@@ -114,7 +114,7 @@ const getMyBookings = async (req: Request, res: Response) => {
                 success: false,
                 message: "Unauthorized",
             });
-        } else if (req.user.role !== UserRole.STUDENT) {
+        } else if (req.user.role !== UserRole.STUDENT && req.user.role !== UserRole.TUTOR) {
             return res.status(403).json({
                 success: false,
                 message: "Unauthorized Access",
@@ -139,9 +139,46 @@ const getMyBookings = async (req: Request, res: Response) => {
     }
 }
 
+const updateBookingStatus = async (req: Request, res: Response) => {
+    try {
+        if (!req.user) return res.status(403).json({ success: false, message: "Unauthorized", });
+        if (req.user.role !== UserRole.STUDENT && req.user.role !== UserRole.TUTOR) return res.status(403).json({ success: false, message: "Unauthorized Access", });
+
+        const bookingId = req.params.id;
+        if (!bookingId) return res.status(403).json({ success: false, message: "Booking Id is required", });
+
+        const { status } = req.body as { status: BookingStatus };
+        if (status !== BookingStatus.CANCELLED && status !== BookingStatus.COMPLETED && status !== BookingStatus.CONFIRMED) return res.status(403).json({ success: false, message: "Invalid Status", });
+
+        const allowedFields = ['status'];
+        const isValidStatus = Object.keys(req.body).every((field) => allowedFields.includes(field));
+        if (!isValidStatus) {
+            return res.status(403).json({
+                success: false,
+                message: "Only status field is allowed to update",
+            });
+         }
+
+        if(Object.keys(req.body).length === 0) return res.status(403).json({ success: false, message: "At least one field is required to update", });
+        
+        const result = await bookingService.updateBookingStatus(bookingId as string, status, req.user.id, req.user.role);
+        return res.status(200).json({
+            success: true,
+            message: "Booking Updated successfully",
+            data: result,
+        })
+    } catch (error: any) {
+        return res.status(500).json({
+            success: false,
+            message: error.message || "Booking Update Failed",
+            details: error,
+        });
+    }
+}
 export const bookingController = {
     createBooking,
     getAllBookings,
     getSingleBooking,
-    getMyBookings
+    getMyBookings,
+    updateBookingStatus
 };
